@@ -1,0 +1,35 @@
+# T001: 建立 Flutter 项目结构与桥接基础
+任务 ID: T001
+创建时间: 2025-12-07 14:28:00
+负责人: TBD
+
+## 目标
+建立完整的 Flutter + Go Module 混合项目结构，确保 M1 阶段基础架构就位。
+
+## 任务分解
+### 1. 项目结构完善
+- [ ] 验证 flutter_app 主项目完整性
+- [ ] 建立 core/bridge go.mod 和 c_src build 系统
+- [ ] 创建 lib/bridge/ Dart FFI 接口层
+
+### 2. 编译配置检查
+- [ ] Android: 验证 gomobile bind 配置兼容性
+- [ ] iOS: 检查 ClashCore.xcframework 构建脚本
+- [ ] Desktop: 验证 CMake 生成 .dll/.dylib 流程
+- [ ] 确认符号表导出完整
+
+### 3. Hello World 验证
+- [ ] 实现 Go 侧版本信息导出
+- [ ] 实现 C 侧桥接函数
+- [ ] 实现 Dart 侧调用接口
+- [ ] 验证四端编译通过
+
+## 依赖项
+- 参考代码: reference_code/FlClash/android/core
+- 参考代码: reference_code/hiddify-app/lib/core
+
+## 验收标准
+四端(Android/iOS/Windows/macOS)均能编译通过，Dart 端显示 Go 内核版本号。
+
+## 当前状态
+in_progress

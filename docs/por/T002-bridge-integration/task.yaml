@@ -1,0 +1,31 @@
+id: T002
+title: 实现Dart->Bridge->Go完整链路
+status: complete
+goal: 建立Flutter应用与Go内核的完整通信链路，实现Hello World验证，为后续TUN模式开发奠定基础。
+steps:
+    - id: S1
+      desc: 创建Go核心导出接口，实现基本的Mihomo控制功能
+      status: complete
+    - id: S2
+      desc: 配置Desktop端FFI桥接，测试Windows/macOS DLL/DYLIB调用
+      status: complete
+    - id: S3
+      desc: 配置Mobile端MethodChannel桥接，测试Android/iOS原生调用
+      status: complete
+    - id: S4
+      desc: 集成测试：完整验证Dart->Bridge->Go调用链路和返回值
+      status: complete
+      acceptance:
+        - Flutter应用能成功调用Go内核基本功能
+        - 跨平台构建脚本能正确生成和使用动态库
+        - 错误处理和异步调用机制正常工作
+      progress_markers:
+        - "Go导出接口创建完成"
+        - "Desktop端FFI桥接验证通过"
+        - "Mobile端MethodChannel桥接验证通过"
+        - "完整调用链路测试成功"
+      evidence:
+        - file:libs/desktop/mihomo_core_linux_amd64.so (1.3MB 动态库)
+        - file:libs/desktop/mihomo_core_linux_amd64.h (1.8KB 头文件)
+        - file:flutter_app/lib/test_integration.dart (集成测试用例)
+        - file:scripts/test_t002_integration.sh (测试验证脚本)

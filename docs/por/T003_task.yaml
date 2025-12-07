@@ -1,0 +1,51 @@
+# T003: 实现流量接管 (TUN 模式)
+任务 ID: T003
+创建时间: 2025-12-07 14:31:00
+负责人: TBD
+
+## 目标
+实现各平台的 TUN 流量接管功能，这是项目中最复杂的部分。
+
+## 任务分解
+### 1. Android 平台
+- [ ] 实现 VpnService fd 获取
+- [ ] 将 fd 传递给 Go gVisor
+- [ ] 处理 Android 权限申请
+- [ ] 测试 TUN 流量转发
+
+### 2. iOS 平台
+- [ ] 实现 NEPacketTunnelProvider
+- [ ] 建立 packetFlow -> Go gVisor 通路
+- [ ] 处理 iOS NetworkExtension 权限
+- [ ] 内存限制优化 (15MB/50MB)
+
+### 3. Desktop 平台
+- [ ] Windows: 集成 Wintun 驱动
+- [ ] macOS: 实现 System Extension
+- [ ] Linux: 使用 TUN/TAP 设备
+- [ ] 零拷贝数据包处理
+
+### 4. Go gVisor 集成
+- [ ] 配置 gVisor 用户空间网络栈
+- [ ] 实现数据包零拷贝通路
+- [ ] 优化 GC 频率避免内存问题
+- [ ] 实现高性能 DNS 解析
+
+## 技术难点
+- **零拷贝要求**: 避免数据在 Go/C/Dart 间多次复制
+- **内存限制**: iOS 15MB 限制需要精确内存管理
+- **平台差异**: 每平台都有不同的 TUN 实现方式
+
+## 依赖项
+- T002 完成前提
+- 参考: reference_code/hiddify-app/assets/core/ (TUN 实现)
+- 参考: reference_code/FlClash/android/core/ (Android VpnService)
+
+## 验收标准
+- Android/iOS 能正常接管 VPN 流量
+- Desktop 平台 TUN 正常工作
+- 吞吐量达到预期性能指标
+- 内存使用在限制范围内
+
+## 当前状态
+pending

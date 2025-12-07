@@ -1,0 +1,7 @@
+interval_seconds: 900
+max_run_seconds: 900
+prompt_path: ./FOREMAN_TASK.md
+cc_user: true
+agent: claude
+enabled: true
+allowed: true

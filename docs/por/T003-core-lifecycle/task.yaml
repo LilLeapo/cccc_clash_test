@@ -1,0 +1,27 @@
+id: T003
+title: TUN模式核心功能实现
+status: active
+goal: 实现Mihomo内核的TUN模式流量接管功能，包括Android VpnService、iOS NEPacketTunnelProvider和Go内核数据包处理，建立完整的流量代理通道。
+steps:
+    - id: S1
+      desc: Android TUN实现：VpnService -> fd -> Go gVisor 数据包传递
+      status: complete
+    - id: S2
+      desc: iOS TUN实现：NEPacketTunnelProvider -> packetFlow -> Go gVisor
+      status: complete
+    - id: S3
+      desc: Go TUN接口实现：gVisor集成和数据包处理逻辑
+      status: complete
+    - id: S4
+      desc: 集成测试：完整验证TUN模式的流量接管和代理功能
+      status: complete
+      acceptance:
+        - Android设备能通过VPN服务拦截和处理流量
+        - iOS设备能通过Network Extension实现TUN代理
+        - Go内核能正确处理通过TUN接口传输的数据包
+        - 流量代理功能正常工作，延迟和性能满足要求
+      progress_markers:
+        - "Android VpnService TUN集成完成"
+        - "iOS NetworkExtension TUN集成完成"
+        - "Go gVisor数据包处理完成"
+        - "TUN模式完整测试通过"

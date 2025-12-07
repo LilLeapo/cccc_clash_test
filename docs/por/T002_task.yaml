@@ -1,0 +1,43 @@
+# T002: 实现核心生命周期接口
+任务 ID: T002
+创建时间: 2025-12-07 14:30:00
+负责人: TBD
+
+## 目标
+在 T001 完成基础上，实现 Go 内核的基本生命周期管理接口：Start、Stop、Reload。
+
+## 任务分解
+### 1. Go 侧接口实现
+- [ ] 实现 `Start(configPath string) error`
+- [ ] 实现 `Stop() error`
+- [ ] 实现 `Reload(configPath string) error`
+- [ ] 实现 `GetStatus() (*Status, error)`
+- [ ] 添加 Panic Recovery 机制
+
+### 2. 移动端后台保活
+- [ ] Android: 实现 Service 保活机制
+- [ ] iOS: 实现 NetworkExtension 后台保活
+- [ ] 确保内核在后台持续运行
+
+### 3. 日志回调系统
+- [ ] Go Log 级别定义 (info/warn/error)
+- [ ] Bridge 传递日志到 Dart
+- [ ] Dart 侧实现日志流处理
+- [ ] UI 日志展示组件
+
+### 4. 错误处理与状态管理
+- [ ] 定义错误码和错误消息格式
+- [ ] 实现优雅关闭机制
+- [ ] 状态持久化 (配置文件更新等)
+
+## 依赖项
+- T001 完成前提
+- 参考: reference_code/hiddify-app/lib/core/
+
+## 验收标准
+- 四端均能成功启动/停止内核
+- 日志能实时显示在 UI 中
+- 后台保活机制正常工作
+
+## 当前状态
+pending

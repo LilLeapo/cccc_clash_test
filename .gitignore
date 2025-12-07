@@ -1,0 +1,17 @@
+# 忽略 Python 缓存和编译文件
+__pycache__/
+*.pyc
+
+# 忽略 .cccc 工具的运行时状态和日志
+.cccc/state/
+.cccc/logs/
+.cccc/mailbox/
+.cccc/work/
+.cccc/rules/
+.cccc/adapters/__pycache__/
+.cccc/common/__pycache__/
+.cccc/orchestrator/__pycache__/
+
+# 忽略系统文件
+.DS_Store
+*.log

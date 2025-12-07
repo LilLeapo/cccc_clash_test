@@ -1,5 +1,12 @@
 {
   "session": "cccc-clash_cccc",
-  "created_at": 1765076647.130187,
-  "cwd": "/mnt/c/Users/Administrator/clash_cccc"
+  "ui_window": "1",
+  "left": "%1",
+  "left_bottom": "%4",
+  "right": "%2",
+  "single_peer": false,
+  "lt": "%1",
+  "lb": "%4",
+  "rt": "%2",
+  "rb": "%3"
 }

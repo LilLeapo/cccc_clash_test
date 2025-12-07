@@ -1,0 +1,25 @@
+id: T003
+title: TUN模式核心功能实现
+status: active
+goal: 实现跨平台TUN流量接管功能，建立完整的代理服务
+steps:
+  - id: S1
+    desc: Android VpnService集成和权限配置
+    status: completed
+  - id: S2
+    desc: Go TUN接口实现和流量处理
+    status: completed
+  - id: S3
+    desc: 跨平台TUN适配(iOS/桌面端)
+    status: pending
+  - id: S4
+    desc: 流量监控和状态管理
+    status: pending
+    acceptance:
+      - Android设备能够成功建立VPN连接
+      - TUN流量能够正确路由和处理
+      - 代理状态和日志监控完整
+    progress_markers:
+      - "Android VpnService集成"
+      - "Go TUN接口实现"
+      - "跨平台TUN适配"

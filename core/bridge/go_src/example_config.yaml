@@ -1,0 +1,113 @@
+# Mihomo-Flutter-Cross 配置文件示例
+# 用于测试配置管理系统
+
+version: v1
+
+# 代理配置
+proxy:
+  mode: Rule
+  allow-lan: false
+  bind-address: "0.0.0.0"
+  http-proxy: "127.0.0.1:7890"
+  socks-proxy: "127.0.0.1:7891"
+
+  # 服务器配置
+  servers:
+    - name: "Shadowsocks-1"
+      type: "shadowsocks"
+      server: "192.168.1.100"
+      port: 8388
+      username: ""
+      password: "your-password"
+      cipher: "aes-256-gcm"
+      network: "tcp"
+
+    - name: "VMess-1"
+      type: "vmess"
+      server: "192.168.1.101"
+      port: 443
+      uuid: "your-uuid"
+      cipher: "auto"
+      network: "ws"
+
+    - name: "Trojan-1"
+      type: "trojan"
+      server: "192.168.1.102"
+      port: 443
+      username: "your-username"
+      password: "your-password"
+
+  # 组配置
+  groups:
+    - name: "Proxy"
+      type: "select"
+      servers:
+        - "Shadowsocks-1"
+        - "VMess-1"
+        - "Trojan-1"
+
+    - name: "Auto"
+      type: "url-test"
+      proxies:
+        - "Proxy"
+      url: "http://www.gstatic.com/generate_204"
+      interval: 300
+
+# DNS配置
+dns:
+  enable: true
+  ipv6: true
+  enhanced: true
+  nameserver:
+    - "https://dns.cloudflare.com/dns-query"
+    - "https://dns.quad9.net/dns-query"
+  fallback:
+    - "114.114.114.114"
+    - "8.8.8.8"
+
+# 主机映射
+hosts:
+  "local.test": "127.0.0.1"
+  "api.github.com": "140.82.112.4"
+
+# 规则配置
+rules:
+  - type: "DOMAIN"
+    value: "google.com"
+  - type: "DOMAIN-SUFFIX"
+    value: "facebook.com"
+  - type: "DOMAIN-KEYWORD"
+    value: "twitter"
+  - type: "CIDR"
+    value: "1.1.1.1/32"
+  - type: "GEOIP"
+    value: "CN"
+  - type: "DST-PORT"
+    value: "80,443"
+  - type: "SRC-PORT"
+    value: "1000-2000"
+  - type: "PROCESS-NAME"
+    value: "chrome.exe"
+  - type: "URL-REGEX"
+    value: ".*\\.github\\.com"
+  - type: "MATCH"
+    value: ""
+
+# 实验性功能
+experimental:
+  cache-file:
+    enable: true
+    path: "./cache.db"
+    cache-id: "mihomo-flutter"
+
+  clash-api:
+    enable: true
+    external: "127.0.0.1:9090"
+
+# 元数据
+metadata:
+  name: "Mihomo Flutter Cross 配置"
+  author: "MiniMax-M2"
+  created: "2025-01-20T10:00:00Z"
+  modified: "2025-01-20T10:00:00Z"
+  description: "用于跨平台Mihomo客户端的示例配置"

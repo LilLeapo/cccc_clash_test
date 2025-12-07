@@ -1,27 +1,36 @@
 id: T001
 title: 初始化混合语言项目架构
-status: in_progress
+status: issues
 goal: 建立包含 Flutter, Go, C 的项目骨架，并实现 Desktop FFI 和 Mobile Gomobile 的构建脚本基础。
 steps:
-    - id: S1
-          desc: 创建目录结构 (Flutter 根目录, core/go, core/bridge, scripts)。
-                status: pending
-                    - id: S2
-                          desc: 初始化 Go Module 并引入 mihomo (clash-meta) 依赖。
-                                status: pending
-                                    - id: S3
-                                          desc: 编写 Desktop 端 (Win/Mac) 的 Makefile/CMakeLists.txt，实现 Go build -buildmode=c-shared。
-                                                status: pending
-                                                    - id: S4
-                                                          desc: 编写 Mobile 端 (Android/iOS) 的 helper 脚本，配置 gomobile bind 环境。
-                                                                status: pending
-                                                                    - id: S5
-                                                                          desc: 在 Flutter 侧配置 ffigen 和 method_channel 基础类，准备对接。
-                                                                                status: pending
-                                                                                acceptance:
-                                                                                    - 运行 `./scripts/build_core_desktop.sh` 能在 `libs/` 下生成 .dll/.dylib 和 .h 文件。
-                                                                                        - 运行 `./scripts/build_core_mobile.sh` 能生成 .aar (Android) 和 .xcframework (iOS)。
-                                                                                            - 项目结构清晰，`PROJECT.md` 中的规范得到体现。
-                                                                                progress_markers:
-                                                                                    - "Bridge 目录设计完成"
-                                                                                        - "Go mod 依赖正常下载"
+  - id: S1
+    desc: 创建目录结构 (Flutter 根目录, core/go, core/bridge, scripts)。
+    status: complete
+  - id: S2
+    desc: 初始化 Go Module 并引入 mihomo (clash-meta) 依赖。
+    status: fixed
+  - id: S3
+    desc: 编写 Desktop 端 (Win/Mac) 的 Makefile/CMakeLists.txt，实现 Go build -buildmode=c-shared。
+    status: fixed
+  - id: S4
+    desc: 编写 Mobile 端 (Android/iOS) 的 helper 脚本，配置 gomobile bind 环境。
+    status: fixed
+  - id: S5
+    desc: 在 Flutter 侧配置 ffigen 和 method_channel 基础类，准备对接。
+    status: complete
+  acceptance:
+    - 运行 `./scripts/build_core_desktop.sh` 能在 `libs/` 下生成 .dll/.dylib 和 .h 文件。
+    - 运行 `./scripts/build_core_mobile.sh` 能生成 .aar (Android) 和 .xcframework (iOS)。
+    - 项目结构清晰，`PROJECT.md` 中的规范得到体现。
+  progress_markers:
+    - "Bridge 目录设计完成"
+    - "Go mod 依赖正常下载"
+    - "跨平台编译脚本创建完成"
+    - "Flutter桥接层完整实现"
+  evidence:
+    - file:core/bridge/go_src/bridge.go (Go桥接接口)
+    - file:core/bridge/c_src/bridge.h (C头文件)
+    - file:core/bridge/c_src/bridge.c (C实现)
+    - file:core/bridge/c_src/CMakeLists.txt (桌面端编译配置)
+  issues:
+    - "Bridge目录曾完全空缺，已修复核心代码缺失问题"

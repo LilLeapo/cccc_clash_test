@@ -1,0 +1,22 @@
+id: T002
+title: 完整的Dart->Bridge->Go链路实现
+status: complete
+goal: 建立稳定的跨语言调用链路，验证FFI桥接技术的可行性
+steps:
+  - id: S1
+    desc: Go动态库编译和函数导出
+    status: complete
+  - id: S2
+    desc: Dart FFI桥接层实现
+    status: complete
+  - id: S3
+    desc: 集成测试和验证
+    status: complete
+    acceptance:
+      - Go动态库成功编译(.so文件)
+      - Dart能够正确调用Go函数
+      - 内存管理和错误处理机制完善
+    progress_markers:
+      - "Go动态库编译成功"
+      - "FFI函数映射验证"
+      - "集成测试框架完成"
