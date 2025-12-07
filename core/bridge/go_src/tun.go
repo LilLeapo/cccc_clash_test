@@ -9,9 +9,6 @@ import (
 	"sync"
 	"time"
 	"unsafe"
-
-	// 模拟导入gVisor相关包（实际实现中需要导入真实的包）
-	_ "github.com/metacubex/gvisor-unsafe" // 占位符
 )
 
 // 全局TUN状态管理
