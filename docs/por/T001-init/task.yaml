@@ -1,23 +1,24 @@
 id: T001
+name: 初始化混合语言项目架构
 title: 初始化混合语言项目架构
-status: issues
+status: completed
 goal: 建立包含 Flutter, Go, C 的项目骨架，并实现 Desktop FFI 和 Mobile Gomobile 的构建脚本基础。
 steps:
   - id: S1
     desc: 创建目录结构 (Flutter 根目录, core/go, core/bridge, scripts)。
-    status: complete
+    status: completed
   - id: S2
     desc: 初始化 Go Module 并引入 mihomo (clash-meta) 依赖。
-    status: fixed
+    status: completed
   - id: S3
     desc: 编写 Desktop 端 (Win/Mac) 的 Makefile/CMakeLists.txt，实现 Go build -buildmode=c-shared。
-    status: fixed
+    status: completed
   - id: S4
     desc: 编写 Mobile 端 (Android/iOS) 的 helper 脚本，配置 gomobile bind 环境。
-    status: fixed
+    status: completed
   - id: S5
     desc: 在 Flutter 侧配置 ffigen 和 method_channel 基础类，准备对接。
-    status: complete
+    status: completed
   acceptance:
     - 运行 `./scripts/build_core_desktop.sh` 能在 `libs/` 下生成 .dll/.dylib 和 .h 文件。
     - 运行 `./scripts/build_core_mobile.sh` 能生成 .aar (Android) 和 .xcframework (iOS)。

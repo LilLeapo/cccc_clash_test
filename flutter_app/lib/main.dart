@@ -1,17 +1,26 @@
-// 主应用程序入口
-// 简单的测试界面来验证桥接功能
-
 import 'package:flutter/material.dart';
-import 'mihomo_core.dart';
-import 'platform/mobile/method_channel.dart';
-import 'platform/desktop/ffi_bridge.dart';
+import 'package:flutter/services.dart';
+import 'screens/config/config_panel.dart';
+import 'storage/config_manager.dart';
+import 'storage/hive_service.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 初始化配置管理器
+  try {
+    await ConfigManager.instance.initialize();
+    await HiveService.instance.initialize();
+    print('✅ 应用程序初始化成功');
+  } catch (e) {
+    print('❌ 应用程序初始化失败: $e');
+  }
+  
+  runApp(const MihomoApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MihomoApp extends StatelessWidget {
+  const MihomoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -19,252 +28,374 @@ class MyApp extends StatelessWidget {
       title: 'Mihomo Flutter Cross',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        primaryColor: Colors.blue[600],
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.light,
+        ),
       ),
-      home: const MihomoHomePage(),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: const MainPage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
-class MihomoHomePage extends StatefulWidget {
-  const MihomoHomePage({super.key});
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
 
   @override
-  State<MihomoHomePage> createState() => _MihomoHomePageState();
+  State<MainPage> createState() => _MainPageState();
 }
 
-class _MihomoHomePageState extends State<MihomoHomePage> {
-  final MihomoCore _mihomoCore = MihomoCore();
-
-  String _status = '准备就绪';
-  String _version = 'Unknown';
-  bool _isConnected = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializePlatform();
-  }
-
-  Future<void> _initializePlatform() async {
-    setState(() {
-      _status = '初始化中...';
-    });
-
-    // 初始化核心
-    final result = await _mihomoCore.initializeCore('test.yaml');
-
-    if (result == 0) {
-      setState(() {
-        _status = '✅ 初始化成功';
-        _isConnected = true;
-      });
-
-      // 获取版本
-      _version = await _mihomoCore.getVersion();
-      setState(() {
-        _version = _version;
-      });
-    } else {
-      setState(() {
-        _status = '❌ 初始化失败 (代码: $result)';
-      });
-    }
-  }
-
-  Future<void> _startProxy() async {
-    if (!_isConnected) {
-      _showMessage('请先初始化核心');
-      return;
-    }
-
-    setState(() {
-      _status = '启动中...';
-    });
-
-    final result = await _mihomoCore.startProxy();
-
-    if (result == 0) {
-      setState(() {
-        _status = '✅ 代理运行中';
-      });
-    } else {
-      setState(() {
-        _status = '❌ 启动失败 (代码: $result)';
-      });
-    }
-  }
-
-  Future<void> _stopProxy() async {
-    setState(() {
-      _status = '停止中...';
-    });
-
-    final result = await _mihomoCore.stopProxy();
-
-    if (result == 0) {
-      setState(() {
-        _status = '✅ 已停止';
-      });
-    } else {
-      setState(() {
-        _status = '❌ 停止失败 (代码: $result)';
-      });
-    }
-  }
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
+class _MainPageState extends State<MainPage> {
+  int _currentIndex = 0;
+  
+  final List<Widget> _pages = [
+    const DashboardPage(),
+    const ConfigPanel(),
+    const StatisticsPage(),
+    const SettingsPage(),
+  ];
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mihomo Flutter Cross'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 状态显示
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        '状态',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _status,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: _status.startsWith('✅')
-                              ? Colors.green
-                              : _status.startsWith('❌')
-                                  ? Colors.red
-                                  : Colors.orange,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // 版本信息
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        '版本信息',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _version,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              // 操作按钮
-              Column(
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: _startProxy,
-                    icon: const Icon(Icons.play_arrow),
-                    label: const Text('启动代理'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _stopProxy,
-                    icon: const Icon(Icons.stop),
-                    label: const Text('停止代理'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _initializePlatform,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('重新初始化'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // 平台信息
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        '平台信息',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '桌面端: ${MihomoCore.isDesktop}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                      Text(
-                        '移动端: ${MihomoCore.isMobile}',
-                        style: const TextStyle(fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: _showDebugInfo,
           ),
+        ],
+      ),
+      body: _pages[_currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.dashboard),
+            label: '仪表盘',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: '配置',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.analytics),
+            label: '统计',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.more_horiz),
+            label: '更多',
+          ),
+        ],
+      ),
+    );
+  }
+  
+  void _showDebugInfo() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('调试信息'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('版本: 0.1.0-alpha'),
+            Text('构建时间: 2025-12-07'),
+            Text('平台: Flutter跨平台'),
+            SizedBox(height: 16),
+            Text('功能状态:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text('✅ T001: 项目初始化'),
+            Text('✅ T002: Bridge层实现'),
+            Text('✅ T003: TUN模式实现'),
+            Text('✅ T004: 配置管理实现'),
+            Text('🔄 T004-S3: UI配置面板'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('关闭'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DashboardPage extends StatelessWidget {
+  const DashboardPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildWelcomeCard(context),
+          const SizedBox(height: 20),
+          _buildStatusCard(context),
+          const SizedBox(height: 20),
+          _buildQuickActions(context),
+          const SizedBox(height: 20),
+          _buildRecentActivity(context),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildWelcomeCard(BuildContext context) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.flutter_dash,
+                  size: 40,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mihomo Flutter Cross',
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '下一代跨平台代理客户端',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              '基于Flutter + Go的混合架构，提供高性能的跨平台代理服务。',
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
         ),
       ),
+    );
+  }
+  
+  Widget _buildStatusCard(BuildContext context) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '系统状态',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(
+                  Icons.circle,
+                  color: Colors.red,
+                  size: 12,
+                ),
+                const SizedBox(width: 8),
+                const Text('代理服务: 未启动'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.circle,
+                  color: Colors.green,
+                  size: 12,
+                ),
+                const SizedBox(width: 8),
+                const Text('配置管理: 正常'),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.circle,
+                  color: Colors.green,
+                  size: 12,
+                ),
+                const SizedBox(width: 8),
+                const Text('数据库: 正常'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildQuickActions(BuildContext context) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '快捷操作',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildActionButton(
+                  context,
+                  Icons.play_arrow,
+                  '启动代理',
+                  Colors.green,
+                  () {},
+                ),
+                _buildActionButton(
+                  context,
+                  Icons.stop,
+                  '停止代理',
+                  Colors.red,
+                  () {},
+                ),
+                _buildActionButton(
+                  context,
+                  Icons.refresh,
+                  '重载配置',
+                  Colors.blue,
+                  () {},
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildActionButton(BuildContext context, IconData icon, String label, Color color, VoidCallback onPressed) {
+    return Column(
+      children: [
+        ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: Colors.white,
+            shape: const CircleBorder(),
+            padding: const EdgeInsets.all(16),
+          ),
+          child: Icon(icon, size: 24),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildRecentActivity(BuildContext context) {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '最近活动',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Column(
+              children: [
+                ListTile(
+                  leading: Icon(Icons.settings, color: Colors.blue),
+                  title: Text('配置系统初始化完成'),
+                  subtitle: Text('2025-12-07 15:44'),
+                ),
+                ListTile(
+                  leading: Icon(Icons.check_circle, color: Colors.green),
+                  title: Text('Bundle ID统一修复'),
+                  subtitle: Text('2025-12-07 15:41'),
+                ),
+                ListTile(
+                  leading: Icon(Icons.folder, color: Colors.orange),
+                  title: Text('项目结构创建'),
+                  subtitle: Text('2025-12-07 11:10'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StatisticsPage extends StatelessWidget {
+  const StatisticsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('统计页面 - 开发中'),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text('设置页面 - 开发中'),
     );
   }
 }

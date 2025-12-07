@@ -4,6 +4,9 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// 应用Go Mobile构建脚本
+apply from: '../build_gomobile.gradle'
+
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file('local.properties')
 if (localPropertiesFile.exists()) {
@@ -23,7 +26,7 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace 'com.mihomoflutter.core'
+    namespace 'com.mihomo.flutter'
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -41,7 +44,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.mihomoflutter.core"
+        applicationId "com.mihomo.flutter"
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
@@ -80,6 +83,9 @@ dependencies {
 
     // TUN相关
     implementation 'androidx.work:work-runtime-ktx:2.8.1'
+
+    // Go Mobile支持
+    implementation 'org.golang.mobile:mobile:0.6.1'
 
     // 测试
     testImplementation 'junit:junit:4.13.2'

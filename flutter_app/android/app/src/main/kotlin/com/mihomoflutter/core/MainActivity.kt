@@ -21,6 +21,14 @@ public class MainActivity extends FlutterActivity {
 
     private MihomoTunService mihomoTunService;
 
+    // JNI native方法声明
+    private native int mihomoCoreInitialize();
+    private native int mihomoCoreStartTun(String config);
+    private native int mihomoCoreStopTun();
+    private native String mihomoCoreGetVersion();
+
+    private String mConfiguration = "";
+
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
@@ -69,9 +77,18 @@ public class MainActivity extends FlutterActivity {
     private boolean initializeMihomo(String configPath) {
         Log.d(TAG, "初始化Mihomo核心: " + configPath);
         try {
-            // TODO: 通过JNI调用Go内核初始化
-            Log.i(TAG, "Mihomo核心初始化成功");
-            return true;
+            // 加载本地库
+            System.loadLibrary("mihomo_core");
+
+            // 通过JNI调用Go内核初始化
+            int result = mihomoCoreInitialize();
+            if (result == 0) {
+                Log.i(TAG, "Mihomo核心初始化成功");
+                return true;
+            } else {
+                Log.e(TAG, "Mihomo核心初始化失败，错误码: " + result);
+                return false;
+            }
         } catch (Exception e) {
             Log.e(TAG, "初始化失败: " + e.getMessage(), e);
             return false;
@@ -81,9 +98,15 @@ public class MainActivity extends FlutterActivity {
     private boolean startProxy() {
         Log.d(TAG, "启动Mihomo代理");
         try {
-            // TODO: 通过JNI调用Go内核启动代理
-            Log.i(TAG, "Mihomo代理启动成功");
-            return true;
+            // 通过JNI调用Go内核启动代理
+            int result = mihomoCoreStartTun(mConfiguration);
+            if (result == 0) {
+                Log.i(TAG, "Mihomo代理启动成功");
+                return true;
+            } else {
+                Log.e(TAG, "Mihomo代理启动失败，错误码: " + result);
+                return false;
+            }
         } catch (Exception e) {
             Log.e(TAG, "启动失败: " + e.getMessage(), e);
             return false;
@@ -93,9 +116,15 @@ public class MainActivity extends FlutterActivity {
     private boolean stopProxy() {
         Log.d(TAG, "停止Mihomo代理");
         try {
-            // TODO: 通过JNI调用Go内核停止代理
-            Log.i(TAG, "Mihomo代理已停止");
-            return true;
+            // 通过JNI调用Go内核停止代理
+            int result = mihomoCoreStopTun();
+            if (result == 0) {
+                Log.i(TAG, "Mihomo代理已停止");
+                return true;
+            } else {
+                Log.e(TAG, "Mihomo代理停止失败，错误码: " + result);
+                return false;
+            }
         } catch (Exception e) {
             Log.e(TAG, "停止失败: " + e.getMessage(), e);
             return false;

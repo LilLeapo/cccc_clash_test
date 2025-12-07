@@ -1,417 +1,321 @@
-// config.go - 配置管理模块
-// 支持YAML配置文件解析、验证、转换和持久化
-
 package main
 
 import (
-	"C"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"sync"
+	"gopkg.in/yaml.v3"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
-	"time"
-
-	"gopkg.in/yaml.v3"
 )
 
-// 配置数据结构
+// Config 全局配置结构
 type Config struct {
-	Version     string            `yaml:"version" json:"version"`
-	Proxy       ProxyConfig       `yaml:"proxy" json:"proxy"`
-	DNS         DNSConfig         `yaml:"dns" json:"dns"`
-	Hosts       map[string]string `yaml:"hosts" json:"hosts"`
-	Rules       []RuleConfig      `yaml:"rules" json:"rules"`
-	Experimental ExperimentalConfig `yaml:"experimental" json:"experimental"`
-	Metadata    MetadataConfig    `yaml:"metadata" json:"metadata"`
-	Raw         string            `yaml:"-" json:"-"`
+mu sync.RWMutex
+Path string `json:"path"`
+Data map[string]interface{} `json:"data"`
 }
 
-// 代理配置
-type ProxyConfig struct {
-	Mode       string            `yaml:"mode" json:"mode"`
-	HTTPProxy  string            `yaml:"http-proxy" json:"http_proxy"`
-	SOCKSProxy string            `yaml:"socks-proxy" json:"socks_proxy"`
-	AllowLAN   bool              `yaml:"allow-lan" json:"allow_lan"`
-	BindAddress string           `yaml:"bind-address" json:"bind_address"`
-	Servers    []ServerConfig    `yaml:"servers" json:"servers"`
-	Groups     []GroupConfig     `yaml:"groups" json:"groups"`
+// ConfigInstance 配置单例
+var configInstance *Config
+var configInitOnce sync.Once
+
+// GetConfig 获取配置单例
+func GetConfig() *Config {
+	configInitOnce.Do(func() {
+		configInstance = &Config{
+			Data: make(map[string]interface{}),
+		}
+	})
+	return configInstance
 }
 
-// 服务器配置
-type ServerConfig struct {
-	Name     string `yaml:"name" json:"name"`
-	Type     string `yaml:"type" json:"type"`
-	Server   string `yaml:"server" json:"server"`
-	Port     int    `yaml:"port" json:"port"`
-	Username string `yaml:"username" json:"username"`
-	Password string `yaml:"password" json:"password"`
-	UUID     string `yaml:"uuid" json:"uuid"`
-	Cipher   string `yaml:"cipher" json:"cipher"`
-	Network  string `yaml:"network" json:"network"`
-}
+// LoadConfigFile 加载YAML配置文件
+//export LoadConfigFile
+func LoadConfigFile(configPath string) int {
+	config := GetConfig()
+	config.mu.Lock()
+	defer config.mu.Unlock()
 
-// 组配置
-type GroupConfig struct {
-	Name     string `yaml:"name" json:"name"`
-	Type     string `yaml:"type" json:"type"`
-	Servers  []string `yaml:"servers" json:"servers"`
-	Proxies  []string `yaml:"proxies" json:"proxies"`
-}
-
-// DNS配置
-type DNSConfig struct {
-	Enable    bool     `yaml:"enable" json:"enable"`
-	IPv6      bool     `yaml:"ipv6" json:"ipv6"`
-	Enhanced  bool     `yaml:"enhanced" json:"enhanced"`
-	Nameserver []string `yaml:"nameserver" json:"nameserver"`
-	Fallback   []string `yaml:"fallback" json:"fallback"`
-}
-
-// 规则配置
-type RuleConfig struct {
-	Type  string `yaml:"type" json:"type"`
-	Value string `yaml:"value" json:"value"`
-}
-
-// 实验性功能配置
-type ExperimentalConfig struct {
-	CacheFile      CacheFileConfig `yaml:"cache-file" json:"cache_file"`
-	ClashAPI       ClashAPIConfig  `yaml:"clash-api" json:"clash_api"`
-}
-
-// 缓存文件配置
-type CacheFileConfig struct {
-	Enable   bool   `yaml:"enable" json:"enable"`
-	Path     string `yaml:"path" json:"path"`
-	CacheID  string `yaml:"cache-id" json:"cache_id"`
-}
-
-// Clash API配置
-type ClashAPIConfig struct {
-	Enable   bool   `yaml:"enable" json:"enable"`
-	External string `yaml:"external" json:"external"`
-}
-
-// 元数据配置
-type MetadataConfig struct {
-	Name        string `yaml:"name" json:"name"`
-	Author      string `yaml:"author" json:"author"`
-	Created     string `yaml:"created" json:"created"`
-	Modified    string `yaml:"modified" json:"modified"`
-	Description string `yaml:"description" json:"description"`
-}
-
-// 全局配置管理
-var (
-	configMu        sync.RWMutex
-	currentConfig   *Config
-	configFilePath  string
-	configModified  time.Time
-)
-
-//export ConfigLoad
-// 加载YAML配置文件
-func ConfigLoad(filePath string) *C.char {
-	configMu.Lock()
-	defer configMu.Unlock()
-
-	if filePath == "" {
-		filePath = "config.yaml"
+	if configPath == "" {
+		configPath = "configs/default.yaml"
 	}
 
-	// 检查文件是否存在
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "配置文件不存在: %s"}`, filePath))
+	// 确保目录存在
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		fmt.Printf("❌ 创建配置目录失败: %v\n", err)
+		return 1
 	}
 
 	// 读取文件
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(configPath)
 	if err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "读取文件失败: %v"}`, err))
+		// 如果文件不存在，创建默认配置
+		fmt.Printf("⚠️  配置文件不存在，创建默认配置: %s\n", configPath)
+		return createDefaultConfig(configPath)
 	}
 
 	// 解析YAML
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "YAML解析失败: %v"}`, err))
+	var configData map[string]interface{}
+	if err := yaml.Unmarshal(data, &configData); err != nil {
+		fmt.Printf("❌ YAML解析失败: %v\n", err)
+		return 1
 	}
 
-	// 验证配置
-	if err := validateConfig(&config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "配置验证失败: %v"}`, err))
-	}
+	config.Path = configPath
+	config.Data = configData
 
-	// 保存原始内容和元信息
-	config.Raw = string(data)
-	config.Metadata.Created = time.Now().Format(time.RFC3339)
-	config.Metadata.Modified = time.Now().Format(time.RFC3339)
-	if config.Metadata.Name == "" {
-		config.Metadata.Name = filepath.Base(filePath)
-	}
-
-	// 更新当前配置
-	currentConfig = &config
-	configFilePath = filePath
-
-	// 获取文件修改时间
-	if info, err := os.Stat(filePath); err == nil {
-		configModified = info.ModTime()
-	}
-
-	result := map[string]interface{}{
-		"success":    true,
-		"config":     config,
-		"file_path":  filePath,
-		"file_size":  len(data),
-		"modified":   configModified.Format(time.RFC3339),
-	}
-
-	jsonData, _ := json.Marshal(result)
-	return C.CString(string(jsonData))
+	fmt.Printf("✅ 配置文件加载成功: %s\n", configPath)
+	fmt.Printf("📋 配置项数量: %d\n", len(configData))
+	return 0
 }
 
-//export ConfigSave
-// 保存配置到YAML文件
-func ConfigSave(configJSON string, filePath string) *C.char {
-	configMu.Lock()
-	defer configMu.Unlock()
+// SaveConfigFile 保存YAML配置文件
+//export SaveConfigFile
+func SaveConfigFile(configPath string, configData string) int {
+	config := GetConfig()
+	config.mu.Lock()
+	defer config.mu.Unlock()
 
-	if filePath == "" {
-		filePath = configFilePath
-		if filePath == "" {
-			filePath = "config.yaml"
+	if configPath == "" {
+		configPath = config.Path
+		if configPath == "" {
+			configPath = "configs/default.yaml"
 		}
 	}
 
-	// 解析JSON配置
-	var config Config
-	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "JSON解析失败: %v"}`, err))
+	var data map[string]interface{}
+	if err := json.Unmarshal([]byte(configData), &data); err != nil {
+		fmt.Printf("❌ JSON解析失败: %v\n", err)
+		return 1
 	}
 
-	// 验证配置
-	if err := validateConfig(&config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "配置验证失败: %v"}`, err))
-	}
-
-	// 转换为YAML
-	data, err := yaml.Marshal(&config)
+	// 序列化YAML
+	yamlData, err := yaml.Marshal(data)
 	if err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "YAML序列化失败: %v"}`, err))
+		fmt.Printf("❌ YAML序列化失败: %v\n", err)
+		return 1
+	}
+
+	// 确保目录存在
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		fmt.Printf("❌ 创建配置目录失败: %v\n", err)
+		return 1
 	}
 
 	// 写入文件
-	if err := ioutil.WriteFile(filePath, data, 0644); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "写入文件失败: %v"}`, err))
+	if err := os.WriteFile(configPath, yamlData, 0644); err != nil {
+		fmt.Printf("❌ 保存配置文件失败: %v\n", err)
+		return 1
 	}
 
-	// 更新当前配置
-	config.Raw = string(data)
-	config.Metadata.Modified = time.Now().Format(time.RFC3339)
-	currentConfig = &config
-	configFilePath = filePath
+	config.Path = configPath
+	config.Data = data
 
-	// 获取文件修改时间
-	if info, err := os.Stat(filePath); err == nil {
-		configModified = info.ModTime()
-	}
-
-	result := map[string]interface{}{
-		"success":   true,
-		"file_path": filePath,
-		"file_size": len(data),
-		"modified":  configModified.Format(time.RFC3339),
-	}
-
-	jsonData, _ := json.Marshal(result)
-	return C.CString(string(jsonData))
+	fmt.Printf("✅ 配置文件保存成功: %s\n", configPath)
+	return 0
 }
 
-//export ConfigGetCurrent
-// 获取当前配置
-func ConfigGetCurrent() *C.char {
-	configMu.RLock()
-	defer configMu.RUnlock()
+// GetConfigValue 获取配置值
+//export GetConfigValue
+func GetConfigValue(key string) string {
+	config := GetConfig()
+	config.mu.RLock()
+	defer config.mu.RUnlock()
 
-	if currentConfig == nil {
-		return C.CString(`{"success": false, "error": "未加载配置"}`)
+	if key == "" {
+		return ""
 	}
 
-	// 添加状态信息
-	result := map[string]interface{}{
-		"success":     true,
-		"config":      currentConfig,
-		"file_path":   configFilePath,
-		"modified":    configModified.Format(time.RFC3339),
-		"has_config":  true,
+	// 解析嵌套键,如 "proxy.servers"
+	keys := strings.Split(key, ".")
+	current := config.Data
+
+	for _, k := range keys {
+		if current == nil {
+			return ""
+		}
+		
+		if mapData, ok := current.(map[string]interface{}); ok {
+			current = mapData[k]
+		} else {
+			current = nil
+		}
 	}
 
-	jsonData, _ := json.Marshal(result)
-	return C.CString(string(jsonData))
-}
-
-//export ConfigValidate
-// 验证配置
-func ConfigValidate(configJSON string) *C.char {
-	var config Config
-	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "JSON解析失败: %v"}`, err))
+	if current == nil {
+		return ""
 	}
 
-	if err := validateConfig(&config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "配置验证失败: %v"}`, err))
-	}
-
-	return C.CString(`{"success": true, "message": "配置验证通过"}`)
-}
-
-//export ConfigToJSON
-// 将配置转换为JSON
-func ConfigToJSON(configYAML string) *C.char {
-	var config Config
-	if err := yaml.Unmarshal([]byte(configYAML), &config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "YAML解析失败: %v"}`, err))
-	}
-
-	jsonData, err := json.Marshal(config)
+	// 转换为JSON字符串
+	jsonData, err := json.Marshal(current)
 	if err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "JSON序列化失败: %v"}`, err))
+		return ""
 	}
 
-	return C.CString(fmt.Sprintf(`{"success": true, "json": %s}`, string(jsonData)))
+	return string(jsonData)
 }
 
-//export ConfigFromJSON
-// 从JSON转换为配置
-func ConfigFromJSON(configJSON string) *C.char {
-	var config Config
-	if err := json.Unmarshal([]byte(configJSON), &config); err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "JSON解析失败: %v"}`, err))
+// SetConfigValue 设置配置值
+//export SetConfigValue
+func SetConfigValue(key string, value string) int {
+	config := GetConfig()
+	config.mu.Lock()
+	defer config.mu.Unlock()
+
+	if key == "" {
+		fmt.Printf("❌ 配置键不能为空\n")
+		return 1
 	}
 
-	yamlData, err := yaml.Marshal(config)
-	if err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "YAML序列化失败: %v"}`, err))
+	var data interface{}
+	if err := json.Unmarshal([]byte(value), &data); err != nil {
+		fmt.Printf("❌ 配置值JSON解析失败: %v\n", err)
+		return 1
 	}
 
-	return C.CString(fmt.Sprintf(`{"success": true, "yaml": %s}`, string(yamlData)))
-}
-
-//export ConfigListProfiles
-// 列出可用配置文件
-func ConfigListProfiles(dirPath string) *C.char {
-	if dirPath == "" {
-		dirPath = "."
+	// 解析嵌套键
+	keys := strings.Split(key, ".")
+	
+	// 确保数据结构存在
+	if config.Data == nil {
+		config.Data = make(map[string]interface{})
 	}
 
-	files, err := ioutil.ReadDir(dirPath)
-	if err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "读取目录失败: %v"}`, err))
-	}
-
-	var profiles []map[string]interface{}
-	for _, file := range files {
-		if strings.HasSuffix(strings.ToLower(file.Name()), ".yaml") ||
-		   strings.HasSuffix(strings.ToLower(file.Name()), ".yml") {
-
-			filePath := filepath.Join(dirPath, file.Name())
-			info, _ := os.Stat(filePath)
-
-			profile := map[string]interface{}{
-				"name":      file.Name(),
-				"path":      filePath,
-				"size":      file.Size(),
-				"modified":  info.ModTime().Format(time.RFC3339),
-				"is_file":   !file.IsDir(),
+	current := config.Data
+	for i, k := range keys {
+		if i == len(keys)-1 {
+			// 最后一级键，直接设置值
+			if mapData, ok := current.(map[string]interface{}); ok {
+				mapData[k] = data
+			} else {
+				fmt.Printf("❌ 无法在非字典类型中设置值: %s\n", key)
+				return 1
 			}
-			profiles = append(profiles, profile)
+		} else {
+			// 中间级键，确保结构存在
+			if mapData, ok := current.(map[string]interface{}); ok {
+				if _, exists := mapData[k]; !exists {
+					mapData[k] = make(map[string]interface{})
+				}
+				current = mapData[k]
+			} else {
+				fmt.Printf("❌ 无法创建嵌套结构: %s\n", key)
+				return 1
+			}
 		}
 	}
 
-	result := map[string]interface{}{
-		"success":   true,
-		"directory": dirPath,
-		"profiles":  profiles,
-		"count":     len(profiles),
-	}
-
-	jsonData, _ := json.Marshal(result)
-	return C.CString(string(jsonData))
+	fmt.Printf("✅ 配置值设置成功: %s = %s\n", key, value)
+	return 0
 }
 
-// 验证配置
-func validateConfig(config *Config) error {
-	if config == nil {
-		return fmt.Errorf("配置为空")
+// GetAllConfig 获取所有配置
+//export GetAllConfig
+func GetAllConfig() string {
+	config := GetConfig()
+	config.mu.RLock()
+	defer config.mu.RUnlock()
+
+	if config.Data == nil {
+		return "{}"
 	}
 
-	// 验证代理模式
-	if config.Proxy.Mode != "" && config.Proxy.Mode != "Rule" &&
-	   config.Proxy.Mode != "Global" && config.Proxy.Mode != "Direct" {
-		return fmt.Errorf("不支持的代理模式: %s", config.Proxy.Mode)
-	}
-
-	// 验证服务器配置
-	for i, server := range config.Proxy.Servers {
-		if server.Name == "" {
-			return fmt.Errorf("服务器配置 %d 缺少名称", i)
-		}
-		if server.Type == "" {
-			return fmt.Errorf("服务器 %s 缺少类型", server.Name)
-		}
-		if server.Port <= 0 || server.Port > 65535 {
-			return fmt.Errorf("服务器 %s 端口无效: %d", server.Name, server.Port)
-		}
-	}
-
-	// 验证组配置
-	for i, group := range config.Proxy.Groups {
-		if group.Name == "" {
-			return fmt.Errorf("组配置 %d 缺少名称", i)
-		}
-		if group.Type == "" {
-			return fmt.Errorf("组 %s 缺少类型", group.Name)
-		}
-	}
-
-	// 验证DNS配置
-	if config.DNS.Enable {
-		if len(config.DNS.Nameserver) == 0 {
-			return fmt.Errorf("DNS启用时必须配置nameserver")
-		}
-	}
-
-	return nil
-}
-
-//export ConfigHotReload
-// 配置热重载
-func ConfigHotReload() *C.char {
-	configMu.Lock()
-	defer configMu.Unlock()
-
-	if configFilePath == "" {
-		return C.CString(`{"success": false, "error": "未指定配置文件路径"}`)
-	}
-
-	// 检查文件是否被修改
-	info, err := os.Stat(configFilePath)
+	jsonData, err := json.Marshal(config.Data)
 	if err != nil {
-		return C.CString(fmt.Sprintf(`{"success": false, "error": "无法检查文件状态: %v"}`, err))
+		return "{}"
 	}
 
-	if info.ModTime().Equal(configModified) {
-		return C.CString(`{"success": true, "message": "配置文件未修改，无需重载"}`)
+	return string(jsonData)
+}
+
+// GetConfigPath 获取当前配置路径
+//export GetConfigPath
+func GetConfigPath() string {
+	config := GetConfig()
+	config.mu.RLock()
+	defer config.mu.RUnlock()
+	return config.Path
+}
+
+// createDefaultConfig 创建默认配置
+func createDefaultConfig(configPath string) int {
+	defaultConfig := map[string]interface{}{
+		"proxy": map[string]interface{}{
+			"mode": "rule",
+			"log-level": "info",
+			"external-controller": "127.0.0.1:9090",
+			"proxies": []interface{}{},
+			"proxy-groups": []interface{}{
+				map[string]interface{}{
+					"name": "Auto",
+					"type": "url-test",
+					"url": "http://www.gstatic.com/generate_204",
+					"interval": 300,
+					"proxies": []interface{}{},
+				},
+			},
+			"rules": []string{
+				"DOMAIN-SUFFIX,google.com,Auto",
+				"DOMAIN-SUFFIX,github.com,Auto",
+				"MATCH,DIRECT",
+			},
+		},
+		"dns": map[string]interface{}{
+			"enable": true,
+			"ipv6": false,
+			"use-hosts": true,
+			"nameservers": []string{
+				"8.8.8.8",
+				"1.1.1.1",
+				"223.5.5.5",
+			},
+		},
 	}
 
-	// 重新加载配置
-	result := ConfigLoad(configFilePath)
+	yamlData, err := yaml.Marshal(defaultConfig)
+	if err != nil {
+		fmt.Printf("❌ 默认配置序列化失败: %v\n", err)
+		return 1
+	}
 
-	// 更新修改时间
-	configModified = info.ModTime()
+	if err := os.WriteFile(configPath, yamlData, 0644); err != nil {
+		fmt.Printf("❌ 创建默认配置文件失败: %v\n", err)
+		return 1
+	}
 
-	return result
+	config := GetConfig()
+	config.mu.Lock()
+	defer config.mu.Unlock()
+
+	config.Path = configPath
+	config.Data = defaultConfig
+
+	fmt.Printf("✅ 默认配置文件创建成功: %s\n", configPath)
+	return 0
+}
+
+// ListConfigKeys 列出配置键
+//export ListConfigKeys
+func ListConfigKeys() string {
+	config := GetConfig()
+	config.mu.RLock()
+	defer config.mu.RUnlock()
+
+	if config.Data == nil {
+		return "[]"
+	}
+
+	var keys []string
+	for key := range config.Data {
+		keys = append(keys, key)
+	}
+
+	jsonData, err := json.Marshal(keys)
+	if err != nil {
+		return "[]"
+	}
+
+	return string(jsonData)
 }

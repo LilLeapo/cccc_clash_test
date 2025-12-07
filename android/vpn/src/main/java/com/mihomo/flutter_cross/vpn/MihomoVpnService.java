@@ -22,11 +22,24 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MihomoVpnService {
     private static final String TAG = "MihomoVpnService";
     private static final int VPN_REQUEST_CODE = 1001;
-    
+
     private Activity _activity;
     private VpnService _vpnService;
     private ParcelFileDescriptor _tunInterface;
     private AtomicBoolean _isRunning = new AtomicBoolean(false);
+
+    // JNI external function declarations
+    static {
+        System.loadLibrary("mihomo_core");
+    }
+
+    // External JNI functions for TUN operations
+    public static native int tunCreate(String interfaceName);
+    public static native int tunStart();
+    public static native int tunStop();
+    public static native int tunReadPacket(byte[] buffer, int bufferSize);
+    public static native int tunWritePacket(byte[] buffer, int bufferSize);
+    public static native String getTunStats();
     
     // 回调接口
     public interface VpnStatusCallback {
@@ -223,12 +236,17 @@ public class MihomoVpnService {
      */
     private boolean callGoCoreTunCreate() {
         try {
-            // TODO: 通过JNI调用Go核心的TunCreate函数
-            // MihomoCore.tunCreate("mihomo-tun")
             Log.d(TAG, "调用Go核心创建TUN");
-            return true;
+            int result = tunCreate("mihomo-tun");
+            if (result == 0) {
+                Log.i(TAG, "Go核心TUN创建成功");
+                return true;
+            } else {
+                Log.e(TAG, "Go核心TUN创建失败，错误码: " + result);
+                return false;
+            }
         } catch (Exception e) {
-            Log.e(TAG, "Go核心TUN创建失败", e);
+            Log.e(TAG, "Go核心TUN创建异常", e);
             return false;
         }
     }
@@ -238,12 +256,17 @@ public class MihomoVpnService {
      */
     private boolean callGoCoreTunStart() {
         try {
-            // TODO: 通过JNI调用Go核心的TunStart函数
-            // MihomoCore.tunStart()
             Log.d(TAG, "调用Go核心启动TUN");
-            return true;
+            int result = tunStart();
+            if (result == 0) {
+                Log.i(TAG, "Go核心TUN启动成功");
+                return true;
+            } else {
+                Log.e(TAG, "Go核心TUN启动失败，错误码: " + result);
+                return false;
+            }
         } catch (Exception e) {
-            Log.e(TAG, "Go核心TUN启动失败", e);
+            Log.e(TAG, "Go核心TUN启动异常", e);
             return false;
         }
     }
@@ -253,11 +276,15 @@ public class MihomoVpnService {
      */
     private void callGoCoreTunStop() {
         try {
-            // TODO: 通过JNI调用Go核心的TunStop函数
-            // MihomoCore.tunStop()
             Log.d(TAG, "调用Go核心停止TUN");
+            int result = tunStop();
+            if (result == 0) {
+                Log.i(TAG, "Go核心TUN停止成功");
+            } else {
+                Log.e(TAG, "Go核心TUN停止失败，错误码: " + result);
+            }
         } catch (Exception e) {
-            Log.e(TAG, "Go核心TUN停止失败", e);
+            Log.e(TAG, "Go核心TUN停止异常", e);
         }
     }
 }

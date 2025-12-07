@@ -1,0 +1,36 @@
+id: T003-S4
+name: TUN功能跨平台集成测试
+title: TUN功能跨平台集成测试
+status: in_progress
+goal: 进行实际TUN功能跨平台集成测试，验证真实功能可用性
+steps:
+  - id: S1
+    desc: Android TUN功能实际测试
+    status: pending
+  - id: S2
+    desc: iOS TUN功能实际测试
+    status: pending
+  - id: S3
+    desc: 桌面平台TUN功能测试
+    status: pending
+  - id: S4
+    desc: 配置同步和流量处理验证
+    status: pending
+  - id: S5
+    desc: 性能和安全压力测试
+    status: pending
+acceptance:
+  - Android设备TUN模式正常启动和停止
+  - iOS设备VPN权限获取和流量接管成功
+  - 桌面平台TUN接口正确创建
+  - 配置变更实时同步到Go后端
+  - TUN流量统计准确显示
+  - 内存使用在iOS 50MB限制内
+  - 无内存泄漏或崩溃问题
+progress_markers:
+  - "Android VpnService集成测试"
+  - "iOS NEPacketTunnelProvider测试"
+  - "桌面平台TUN接口测试"
+  - "配置同步验证"
+  - "流量处理验证"
+  - "性能基准测试"

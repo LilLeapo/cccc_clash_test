@@ -1,0 +1,51 @@
+// Go Mobile构建脚本
+ext.gomobileBuild = { String targetDir, String pkg ->
+    def goModPath = "../../go.mod"
+    def outputPath = "${projectDir}/libs"
+    
+    println "🔨 开始构建Go Mobile绑定: ${pkg}"
+    
+    // 检查go.mod文件
+    if (!file(goModPath).exists()) {
+        println "❌ go.mod文件不存在: ${goModPath}"
+        return
+    }
+    
+    // 设置GOPATH和GOMOBILE环境变量
+    def env = System.getenv()
+    def goPath = env.get("GOPATH") ?: System.getProperty("user.home") + "/go"
+    def gomobilePath = goPath + "/bin"
+    
+    println "📁 Go路径: ${goPath}"
+    println "📱 Gomobile路径: ${gomobilePath}"
+    
+    // 创建输出目录
+    new File(outputPath).mkdirs()
+    
+    try {
+        // 执行gomobile bind
+        def cmd = [
+            "${gomobilePath}/gomobile",
+            "bind",
+            "-target=android",
+            "-o", "${outputPath}/mihomo.aar",
+            "-pkg", "mihomo",
+            "./../../go.mod"
+        ]
+        
+        def process = cmd.execute(null, new File(projectDir))
+        def output = new StringWriter()
+        def error = new StringWriter()
+        process.waitForProcessOutput(output, error)
+        
+        if (process.exitValue() == 0) {
+            println "✅ Go Mobile绑定构建成功"
+            println "📦 输出文件: ${outputPath}/mihomo.aar"
+        } else {
+            println "❌ Go Mobile绑定构建失败:"
+            println error.toString()
+        }
+    } catch (Exception e) {
+        println "❌ 构建过程中出现异常: ${e.message}"
+    }
+}

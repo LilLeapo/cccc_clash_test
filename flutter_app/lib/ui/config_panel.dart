@@ -47,6 +47,10 @@ class _ConfigPanelPageState extends State<ConfigPanelPage>
   String _validationError = '';
   List<String> _validationWarnings = [];
 
+  // 编辑器设置
+  bool _autoSave = true;
+  bool _realTimeValidation = true;
+
   @override
   void initState() {
     super.initState();
@@ -877,17 +881,46 @@ class _ConfigPanelPageState extends State<ConfigPanelPage>
             SwitchListTile(
               title: const Text('自动保存'),
               subtitle: const Text('编辑时自动保存配置'),
-              value: true,
+              value: _autoSave,
               onChanged: (value) {
-                // TODO: 实现自动保存设置
+                setState(() {
+                  _autoSave = value;
+                });
+                // 实现自动保存设置
+                if (_autoSave) {
+                  _enableAutoSave();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('自动保存已启用')),
+                  );
+                } else {
+                  _disableAutoSave();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('自动保存已禁用')),
+                  );
+                }
               },
             ),
             SwitchListTile(
               title: const Text('实时验证'),
               subtitle: const Text('编辑时实时验证配置格式'),
-              value: true,
+              value: _realTimeValidation,
               onChanged: (value) {
-                // TODO: 实现实时验证设置
+                setState(() {
+                  _realTimeValidation = value;
+                });
+                // 实现实时验证设置
+                if (_realTimeValidation) {
+                  _enableRealTimeValidation();
+                  _validateCurrentConfig();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('实时验证已启用')),
+                  );
+                } else {
+                  _disableRealTimeValidation();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('实时验证已禁用')),
+                  );
+                }
               },
             ),
           ],
@@ -925,6 +958,143 @@ class _ConfigPanelPageState extends State<ConfigPanelPage>
       return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateTimeStr;
+    }
+  }
+
+  // =============================================================================
+  // 自动保存和实时验证功能实现
+  // =============================================================================
+
+  Timer? _autoSaveTimer;
+  Timer? _validationTimer;
+
+  /// 启用自动保存
+  void _enableAutoSave() {
+    if (_autoSaveTimer != null) {
+      _autoSaveTimer?.cancel();
+    }
+
+    _configEditorController.addListener(_onTextChanged);
+  }
+
+  /// 禁用自动保存
+  void _disableAutoSave() {
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = null;
+    _configEditorController.removeListener(_onTextChanged);
+  }
+
+  /// 文本变化处理
+  void _onTextChanged() {
+    if (!_autoSave) return;
+
+    // 重置定时器
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(const Duration(seconds: 2), () {
+      _performAutoSave();
+    });
+  }
+
+  /// 执行自动保存
+  Future<void> _performAutoSave() async {
+    if (_currentConfigId.isEmpty) return;
+
+    try {
+      final currentContent = _configEditorController.text;
+      if (currentContent.trim().isEmpty) return;
+
+      final result = await configManager.updateConfig(
+        _currentConfigId,
+        currentContent,
+      );
+
+      if (result['success']) {
+        // 可以显示保存成功的提示（可选）
+        print('自动保存成功: ${_currentConfigName}');
+      } else {
+        print('自动保存失败: ${result['error']}');
+      }
+    } catch (e) {
+      print('自动保存异常: $e');
+    }
+  }
+
+  /// 启用实时验证
+  void _enableRealTimeValidation() {
+    if (_validationTimer != null) {
+      _validationTimer?.cancel();
+    }
+
+    _configEditorController.addListener(_onTextValidationChanged);
+  }
+
+  /// 禁用实时验证
+  void _disableRealTimeValidation() {
+    _validationTimer?.cancel();
+    _validationTimer = null;
+    _configEditorController.removeListener(_onTextValidationChanged);
+    setState(() {
+      _validationError = '';
+      _validationWarnings.clear();
+      _isValidating = false;
+    });
+  }
+
+  /// 文本验证变化处理
+  void _onTextValidationChanged() {
+    if (!_realTimeValidation) return;
+
+    // 重置定时器
+    _validationTimer?.cancel();
+    _validationTimer = Timer(const Duration(seconds: 1), () {
+      _validateCurrentConfig();
+    });
+  }
+
+  /// 验证当前配置
+  Future<void> _validateCurrentConfig() async {
+    final content = _configEditorController.text;
+    if (content.trim().isEmpty) {
+      setState(() {
+        _isValidating = false;
+        _validationError = '';
+        _validationWarnings.clear();
+      });
+      return;
+    }
+
+    setState(() {
+      _isValidating = true;
+      _validationError = '';
+      _validationWarnings.clear();
+    });
+
+    try {
+      // 验证YAML格式
+      final yaml = loadYaml(content);
+
+      // 检查基本结构
+      final warnings = <String>[];
+
+      // 检查必要的字段
+      if (yaml['proxy-providers'] == null && yaml['proxies'] == null) {
+        warnings.add('建议配置proxies或proxy-providers');
+      }
+
+      if (yaml['rules'] == null) {
+        warnings.add('建议配置rules规则');
+      }
+
+      setState(() {
+        _isValidating = false;
+        _validationWarnings = warnings;
+      });
+    } catch (e) {
+      setState(() {
+        _isValidating = false;
+        _validationError = 'YAML格式错误: $e';
+        _validationWarnings.clear();
+      });
     }
   }
 }

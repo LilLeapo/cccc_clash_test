@@ -1,0 +1,9 @@
+//
+//  Base.xcconfig
+//  Runner
+//
+//  Configuration for iOS build
+//
+
+BASE_BUNDLE_IDENTIFIER=com.mihomo.flutter
+SERVICE_IDENTIFIER=com.mihomo.flutter

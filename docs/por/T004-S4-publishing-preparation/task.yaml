@@ -1,0 +1,36 @@
+id: T004-S4
+name: 发布准备和文档完善
+title: 发布准备和文档完善
+status: in_progress
+goal: 完成应用发布准备工作，包括构建脚本完善、发布文档、部署流程和应用商店准备材料
+steps:
+  - id: S1
+    desc: 构建脚本完善和优化
+    status: pending
+  - id: S2
+    desc: 发布文档编写
+    status: pending
+  - id: S3
+    desc: 应用商店准备材料
+    status: pending
+  - id: S4
+    desc: 部署流程文档
+    status: pending
+  - id: S5
+    desc: 最终发布验证
+    status: pending
+acceptance:
+  - 构建脚本支持所有平台的自动构建
+  - 完整的用户使用文档
+  - 开发者部署指南
+  - 应用商店发布所需材料准备完整
+  - CI/CD流程文档完整
+  - 应用性能和安全验证通过
+  - 跨平台兼容性测试通过
+progress_markers:
+  - "构建脚本优化"
+  - "用户文档编写"
+  - "开发者文档完善"
+  - "应用商店材料准备"
+  - "部署流程文档"
+  - "发布验证测试"
