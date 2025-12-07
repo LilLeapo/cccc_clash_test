@@ -2,7 +2,6 @@ package main
 
 import (
 	"C"
-	"context"
 	"fmt"
 	"sync"
 	"time"
@@ -170,8 +169,8 @@ func main() {
 	// 测试停止
 	StopMihomoProxy()
 
-	fmt.Printf("👋 %s\n", HelloWorld())
-	fmt.Printf("📊 版本: %s\n", GetMihomoVersion())
+	fmt.Printf("👋 %s\n", C.GoString(HelloWorld()))
+	fmt.Printf("📊 版本: %s\n", C.GoString(GetMihomoVersion()))
 
 	// 测试日志
 	LogCallback("info", "系统启动完成")
