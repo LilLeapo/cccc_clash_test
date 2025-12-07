@@ -1,0 +1,43 @@
+[DEBUG] Watching for changes in setting files C:\Users\Administrator\.claude\settings.json, C:\Users\Administrator\.claude\settings.json...
+[DEBUG] Using bash path: "C:\Program Files\Git\bin\bash.exe"
+[DEBUG] Writing to temp file: C:\Users\Administrator\.claude.json.tmp.17728.1761814179750
+[DEBUG] Preserving file permissions: 100666
+[DEBUG] Temp file written successfully, size: 1276 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming C:\Users\Administrator\.claude.json.tmp.17728.1761814179750 to C:\Users\Administrator\.claude.json
+[DEBUG] File C:\Users\Administrator\.claude.json written atomically
+[DEBUG] Found 0 plugins (0 enabled, 0 disabled)
+[DEBUG] Loading skills from directories: managed=C:\ProgramData\ClaudeCode\.claude\skills, user=C:\Users\Administrator\.claude\skills, project=C:\Users\Administrator\.claude\skills
+[DEBUG] >>>>> getPluginSkills CALLED <<<<<
+[DEBUG] Creating shell snapshot for bash (C:\Program Files\Git\bin\bash.exe)
+[DEBUG] Looking for shell config file: C:\Users\Administrator\.bashrc
+[DEBUG] Shell config file not found: C:\Users\Administrator\.bashrc, creating snapshot with Claude Code defaults only
+[DEBUG] Snapshots directory: C:\Users\Administrator\.claude\shell-snapshots
+[DEBUG] Creating snapshot at: C:\Users\Administrator\.claude\shell-snapshots\snapshot-bash-1761814180010-u6x71y.sh
+[DEBUG] Shell binary exists: true
+[DEBUG] Execution timeout: 10000ms
+[DEBUG] Writing to temp file: C:\Users\Administrator\.claude\todos\242c3785-4ff7-4a65-a583-f5b01c4f17ff-agent-242c3785-4ff7-4a65-a583-f5b01c4f17ff.json.tmp.17728.1761814180016
+[DEBUG] Temp file written successfully, size: 2 bytes
+[DEBUG] Renaming C:\Users\Administrator\.claude\todos\242c3785-4ff7-4a65-a583-f5b01c4f17ff-agent-242c3785-4ff7-4a65-a583-f5b01c4f17ff.json.tmp.17728.1761814180016 to C:\Users\Administrator\.claude\todos\242c3785-4ff7-4a65-a583-f5b01c4f17ff-agent-242c3785-4ff7-4a65-a583-f5b01c4f17ff.json
+[DEBUG] File C:\Users\Administrator\.claude\todos\242c3785-4ff7-4a65-a583-f5b01c4f17ff-agent-242c3785-4ff7-4a65-a583-f5b01c4f17ff.json written atomically
+[DEBUG] getPluginSkills: Processing 0 enabled plugins
+[DEBUG] Total plugin skills loaded: 0
+[DEBUG] Total plugin commands loaded: 0
+[DEBUG] Registered 0 hooks from 0 plugins
+[DEBUG] Loaded 0 unique skills (managed: 0, user: 0, project: 0, duplicates removed: 0)
+[DEBUG] getSkillsIfEnabled returning: 0 skill dir commands, 0 plugin skills
+[DEBUG] Total plugin agents loaded: 0
+[DEBUG] Writing to temp file: C:\Users\Administrator\.claude.json.tmp.17728.1761814180108
+[DEBUG] Preserving file permissions: 100666
+[DEBUG] Temp file written successfully, size: 1276 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming C:\Users\Administrator\.claude.json.tmp.17728.1761814180108 to C:\Users\Administrator\.claude.json
+[DEBUG] File C:\Users\Administrator\.claude.json written atomically
+[DEBUG] Shell snapshot created successfully (350 bytes)
+[DEBUG] Stream started - received first chunk
+[DEBUG] Stream started - received first chunk
+[DEBUG] Skipping SubagentStop hook execution - workspace trust not accepted
+[DEBUG] Skipping SubagentStop hook execution - workspace trust not accepted
+[DEBUG] Skipping SessionEnd:other hook execution - workspace trust not accepted
+[DEBUG] Skipping SessionEnd:other hook execution - workspace trust not accepted
+[DEBUG] Cleaned up session snapshot: C:\Users\Administrator\.claude\shell-snapshots\snapshot-bash-1761814180010-u6x71y.sh

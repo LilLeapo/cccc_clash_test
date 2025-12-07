@@ -1,0 +1,19 @@
+[ERROR] Failed to save config with lock: Error: ENOENT: no such file or directory, lstat 'C:\Users\Administrator\.claude.json'
+[DEBUG] Writing to temp file: C:\Users\Administrator\.claude.json.tmp.7612.1761805860515
+[DEBUG] Setting permissions for new file: 600
+[DEBUG] Temp file written successfully, size: 103 bytes
+[DEBUG] Renaming C:\Users\Administrator\.claude.json.tmp.7612.1761805860515 to C:\Users\Administrator\.claude.json
+[DEBUG] File C:\Users\Administrator\.claude.json written atomically
+[DEBUG] Using bash path: "C:\Program Files\Git\bin\bash.exe"
+[DEBUG] Writing to temp file: C:\Users\Administrator\.claude.json.tmp.7612.1761805860536
+[DEBUG] Preserving file permissions: 100666
+[DEBUG] Temp file written successfully, size: 183 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming C:\Users\Administrator\.claude.json.tmp.7612.1761805860536 to C:\Users\Administrator\.claude.json
+[DEBUG] File C:\Users\Administrator\.claude.json written atomically
+[DEBUG] Writing to temp file: C:\Users\Administrator\.claude.json.tmp.7612.1761805860545
+[DEBUG] Preserving file permissions: 100666
+[DEBUG] Temp file written successfully, size: 220 bytes
+[DEBUG] Applied original permissions to temp file
+[DEBUG] Renaming C:\Users\Administrator\.claude.json.tmp.7612.1761805860545 to C:\Users\Administrator\.claude.json
+[DEBUG] File C:\Users\Administrator\.claude.json written atomically
